@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionModel>
+	<Runtime>
+	</Runtime>
+
+      <Extension path = "/MonoDevelop/Ide/Commands">
+        <Command id = "VSMacExtension.OpenPluginsDirectoryCommandHandler"
+            _label = "Open VSMac Bundle Plugins folder"
+            defaultHandler = "VSMacExtension.OpenPluginsDirectoryCommandHandler"
+            _description = "Copies the dll to the bundle directory"/>
+        <Command id = "VSMacExtension.OpenPluginDirectoryCommandHandler"
+            _label = "Open Bundle folder"
+            defaultHandler = "VSMacExtension.OpenPluginDirectoryCommandHandler"
+            _description = "Opens the bundle output directory folder for this addin"/>
+        <Command id = "VSMacExtension.CopyToBundleDirectoryCommandHandler"
+            _label = "Copy DLL to VS Bundle"
+            defaultHandler = "VSMacExtension.CopyToBundleDirectoryCommandHandler"
+            _description = "Copies the dll to the bundle directory"/>
+    </Extension>
+
+    <Extension path = "/MonoDevelop/Ide/ContextMenu/ProjectPad">
+       <SeparatorItem id="VSMacExtension.Separator33" insertbefore="AddSectionEnd" />
+       <CommandItem id = "VSMacExtension.OpenPluginsDirectoryCommandHandler" />
+       <CommandItem id = "VSMacExtension.OpenPluginDirectoryCommandHandler" />
+       <CommandItem id = "VSMacExtension.CopyToBundleDirectoryCommandHandler" />
+    </Extension>
+</ExtensionModel>
