@@ -5,7 +5,7 @@ using Mono.Addins.Description;
 [assembly: Addin(
     "VSMacExtension",
     Namespace = "VSMacExtension",
-    Version = "1.2"
+    Version = "1.2.5"
 )]
 
 [assembly: AddinName("VSMacExtension")]
