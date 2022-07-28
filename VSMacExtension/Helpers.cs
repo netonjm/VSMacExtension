@@ -1,21 +1,23 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using MonoDevelop.Core;
-using MonoDevelop.Ide;
+﻿using MonoDevelop.Ide;
 using MonoDevelop.Projects;
 
 namespace VSMacExtension
 {
     static class Helpers
     {
-        public static string GetBundleAddinsDirectory ()
+        public static string GetBundleMonoBundleDirectory()
         {
             var solution = IdeApp.ProjectOperations.CurrentSelectedSolution;
             var outputdir = solution.OutputDirectory.Replace("\\", "/");
             var vsProject = GetVisualStudioProject();
-            var appBundlePath = Path.Combine(outputdir, vsProject.Name + ".app", "Contents", "MonoBundle", "AddIns");
+            var appBundlePath = Path.Combine(outputdir, vsProject.Name + ".app", "Contents", "MonoBundle");
+            return appBundlePath;
+        }
+
+        public static string GetBundleAddinsDirectory ()
+        {
+            var bundle = GetBundleMonoBundleDirectory();
+            var appBundlePath = Path.Combine(bundle, "AddIns");
             return appBundlePath;
         }
 
@@ -69,43 +71,43 @@ namespace VSMacExtension
             return string.Empty;
         }
 
-        //public static bool IsAddinProject (DotNetProject selectedProject, out Mono.Addins.AddinAttribute addinAttribute)
-        //{
-        //    if (selectedProject.DefaultConfiguration is DotNetProjectConfiguration)
-        //    {
-        //        var outputname = selectedProject.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration);
-        //        if (File.Exists(outputname))
-        //        {
-        //            try
-        //            {
-        //                var assembly = Assembly.LoadFile(outputname);
-        //                var attributes = (Mono.Addins.AddinAttribute)assembly.GetCustomAttribute(typeof(Mono.Addins.AddinAttribute));
-        //                if (attributes != null)
-        //                {
-        //                    addinAttribute = attributes;
-        //                    return true;
-        //                }
-        //            }
-        //            catch (System.Exception ex)
-        //            {
-        //                LoggingService.LogError($"Cannot read assembly: {outputname}",ex);
-        //            }
-        //        }
-        //    }
-        //    addinAttribute = null;
-        //    return false;
-        //}
+        static int ComparePaths (string path1, string path2)
+        {
+            return string.Compare(
+    Path.GetFullPath(path1).TrimEnd(Path.DirectorySeparatorChar),
+    Path.GetFullPath(path2).TrimEnd(Path.DirectorySeparatorChar),
+    StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public static bool IsAddinProject(DotNetProject selectedProject)
+        {
+            var outputFile = selectedProject.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration).ParentDirectory.FullPath;
+            var outputDirectory = GetOutputDirectory();
+            return ComparePaths(outputFile.FullPath, outputDirectory) != 0;
+        }
 
         public static string GetDestinationProjectAddinDirectory(DotNetProject selectedProject)
         {
-            var outputFile = selectedProject.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration).ParentDirectory.FullPath;
-            var localAddinsDirectory = GetOriginAddinsDirectory();
-            var relativeDirectoryPath = MakeRelativePath(localAddinsDirectory, outputFile);
-            if (relativeDirectoryPath.StartsWith("AddIns/"))
-                relativeDirectoryPath = relativeDirectoryPath.Substring("AddIns/".Length);
+            string destinationDirectory;
+            if (IsAddinProject(selectedProject))
+            {
+                //addins
+                var localAddinsDirectory = GetOriginAddinsDirectory();
 
-            var addinsDirectory = GetBundleAddinsDirectory();
-            var destinationDirectory = Path.Combine(addinsDirectory, relativeDirectoryPath);
+                var outputFile = selectedProject.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration).ParentDirectory.FullPath;
+                var relativeDirectoryPath = MakeRelativePath(localAddinsDirectory, outputFile);
+                if (relativeDirectoryPath.StartsWith("AddIns/"))
+                    relativeDirectoryPath = relativeDirectoryPath.Substring("AddIns/".Length);
+
+                var addinsDirectory = GetBundleAddinsDirectory();
+                destinationDirectory = Path.Combine(addinsDirectory, relativeDirectoryPath);
+              
+            }
+            else
+            {
+                //is not an addins project
+                destinationDirectory = GetBundleMonoBundleDirectory();
+            }
             return destinationDirectory;
         }
 

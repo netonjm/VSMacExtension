@@ -94,9 +94,19 @@ namespace VSMacExtension
 
                 if (Directory.Exists(destinationDirectory))
                 {
-                    var directory = Helpers.GetDestinationProjectAddinDirectory(project);
-                    var addin = Path.GetFileNameWithoutExtension(directory);
-                    info.Text = $"Copy '{addin}' Addin output files to Bundle...";
+                    if (Helpers.IsAddinProject(project))
+                    {
+                        var directory = Helpers.GetDestinationProjectAddinDirectory(project);
+                        var addin = Path.GetFileNameWithoutExtension(directory);
+                        info.Text = $"Copy '{addin}' Addin output files to Bundle...";
+                    }
+                    else
+                    {
+                        var sourceFile = project.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration).FullPath;
+                        var fileName = Path.GetFileName(sourceFile);
+                        info.Text = $"Copy '{fileName}' library to Bundle...";
+                    }
+                 
                     info.Visible = info.Enabled = true;
                 }
                 else
@@ -130,14 +140,74 @@ namespace VSMacExtension
                     return;
                 }
 
-                var destinationDirectory = Helpers.GetDestinationProjectAddinDirectory(selectedProject);
-                if (!System.IO.Directory.Exists(destinationDirectory))
+                if (Helpers.IsAddinProject(selectedProject))
                 {
-                    MessageService.ShowMessage($"Output directory: {destinationDirectory} doesn't exists");
-                    return;
+                    var destinationDirectory = Helpers.GetDestinationProjectAddinDirectory(selectedProject);
+                    if (!System.IO.Directory.Exists(destinationDirectory))
+                    {
+                        MessageService.ShowMessage($"Output directory: {destinationDirectory} doesn't exists");
+                        return;
+                    }
+
+                    Helpers.CopyFilesRecursively(sourceDirectory, destinationDirectory);
                 }
-              
-                Helpers.CopyFilesRecursively(sourceDirectory, destinationDirectory);
+                else
+                {
+                    //no es un addin
+                    var sourceFile = selectedProject.GetOutputFileName(IdeApp.Workspace.ActiveConfiguration).FullPath;
+                    if (!File.Exists(sourceFile))
+                    {
+                        MessageService.ShowMessage($"Output file: {sourceFile} doesn't exists");
+                        return;
+                    }
+
+                    var originDirectory = Path.GetDirectoryName(sourceFile);
+
+                    var destinationPath = Helpers.GetBundleMonoBundleDirectory();
+                    var fileName = Path.GetFileNameWithoutExtension(sourceFile);
+                    var extension = Path.GetExtension(sourceFile);
+                    var destinationFile = Path.Combine(destinationPath, string.Concat(fileName,extension));
+
+                    try
+                    {
+                        File.Copy(sourceFile, destinationFile, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+
+                    //pdb
+                    var pdbOriginFile = Path.Combine(originDirectory, string.Concat(fileName, ".pdb"));
+                    if (File.Exists(pdbOriginFile))
+                    {
+                        var pdbDestinationFile = Path.Combine(destinationPath, string.Concat(fileName, ".pdb"));
+
+                        try
+                        {
+                            File.Copy(pdbOriginFile, pdbDestinationFile, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
+                    }
+
+                    //xml
+                    var xmlOriginFile = Path.Combine(originDirectory, string.Concat(fileName, ".xml"));
+                    if (File.Exists(xmlOriginFile))
+                    {
+                        var xmlDestinationFile = Path.Combine(destinationPath, string.Concat(fileName, ".xml"));
+                        try
+                        {
+                            File.Copy(xmlOriginFile, xmlDestinationFile, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
+                    }
+                }
             }
         }
        
